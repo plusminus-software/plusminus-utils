@@ -13,25 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
 import lombok.experimental.UtilityClass;
 
-import java.util.stream.Stream;
+import java.util.function.BinaryOperator;
 
 @UtilityClass
-public class NumberUtils {
+public class StreamUtils {
 
-    public boolean isNumberClass(Class<?> type) {
-        return isPrimitiveNumberClass(type) || isWrappedNumberClass(type);
+    public <T> BinaryOperator<T> noDuplicatesMergeFunction() {
+        return (u, v) -> {
+            throw new IllegalStateException(String.format("Duplicate key %s", u));
+        };
     }
 
-    public boolean isPrimitiveNumberClass(Class<?> type) {
-        return Stream.of(byte.class, short.class, int.class, long.class, float.class, double.class)
-                .anyMatch(t -> t == type);
-    }
-
-    public boolean isWrappedNumberClass(Class<?> type) {
-        return Number.class.isAssignableFrom(type);
+    public <T> BinaryOperator<T> ignoreOthersMergeFunction() {
+        return (u, v) -> u;
     }
 }

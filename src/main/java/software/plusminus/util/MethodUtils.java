@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
-import company.plusminus.util.exception.UnknownMethodException;
 import lombok.experimental.UtilityClass;
+import software.plusminus.util.exception.UnknownMethodException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

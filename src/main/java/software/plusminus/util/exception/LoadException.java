@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util.exception;
+package software.plusminus.util.exception;
 
-public class ConstructionException extends RuntimeException {
+public class LoadException extends RuntimeException {
 
-    public ConstructionException(String message) {
+    public LoadException(String message) {
         super(message);
     }
 
-    public ConstructionException(Exception exception) {
+    public LoadException(Exception exception) {
         super(exception);
     }
 }

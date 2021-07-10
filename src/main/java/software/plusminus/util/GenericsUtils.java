@@ -13,25 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
 import lombok.experimental.UtilityClass;
-import org.springframework.lang.Nullable;
 
-import java.util.stream.Stream;
+import java.lang.reflect.ParameterizedType;
 
 @UtilityClass
-public class EntityUtils {
+public class GenericsUtils {
 
-    @Nullable
-    public <T> Object findId(T entity) {
-        return findId(entity, Object.class);
+    public <T> Class<T> getFirstGenericType(Object object) {
+        return (Class<T>)
+                ((ParameterizedType) object.getClass().getGenericSuperclass())
+                        .getActualTypeArguments()[0];
     }
-
-    @Nullable
-    public <T, I> I findId(T entity, Class<I> idType) {
-        return FieldUtils.readFirst(entity, idType, field -> Stream.of(field.getAnnotations())
-                .anyMatch(annotation -> annotation.annotationType().getSimpleName().equalsIgnoreCase("id")));
-    }
-
 }

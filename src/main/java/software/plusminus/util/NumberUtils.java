@@ -13,11 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util.helpers;
+package software.plusminus.util;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import lombok.experimental.UtilityClass;
 
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Id {
+import java.util.stream.Stream;
+
+@UtilityClass
+public class NumberUtils {
+
+    public boolean isNumberClass(Class<?> type) {
+        return isPrimitiveNumberClass(type) || isWrappedNumberClass(type);
+    }
+
+    public boolean isPrimitiveNumberClass(Class<?> type) {
+        return Stream.of(byte.class, short.class, int.class, long.class, float.class, double.class)
+                .anyMatch(t -> t == type);
+    }
+
+    public boolean isWrappedNumberClass(Class<?> type) {
+        return Number.class.isAssignableFrom(type);
+    }
 }

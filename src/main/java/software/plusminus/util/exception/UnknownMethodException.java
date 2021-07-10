@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util.exception;
+package software.plusminus.util.exception;
 
 public class UnknownMethodException extends RuntimeException {
 

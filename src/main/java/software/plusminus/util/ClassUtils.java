@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
-import company.plusminus.util.exception.ConstructionException;
-import company.plusminus.util.exception.LoadException;
 import lombok.experimental.UtilityClass;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
@@ -28,6 +26,8 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.SystemPropertyUtils;
+import software.plusminus.util.exception.ConstructionException;
+import software.plusminus.util.exception.LoadException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

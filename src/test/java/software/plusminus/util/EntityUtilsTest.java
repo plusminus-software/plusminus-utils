@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
-import company.plusminus.util.helpers.ChildTestEntity;
-import company.plusminus.util.helpers.TestEntity;
 import org.junit.Test;
+import software.plusminus.util.helpers.ChildTestEntity;
+import software.plusminus.util.helpers.TestEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

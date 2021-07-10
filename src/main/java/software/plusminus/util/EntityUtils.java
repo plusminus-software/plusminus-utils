@@ -13,11 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util.helpers;
+package software.plusminus.util;
 
-public class ChildTestEntity extends TestEntity {
+import lombok.experimental.UtilityClass;
+import org.springframework.lang.Nullable;
 
-    public ChildTestEntity(Long id, String myField) {
-        super(id, myField);
+import java.util.stream.Stream;
+
+@UtilityClass
+public class EntityUtils {
+
+    @Nullable
+    public <T> Object findId(T entity) {
+        return findId(entity, Object.class);
     }
+
+    @Nullable
+    public <T, I> I findId(T entity, Class<I> idType) {
+        return FieldUtils.readFirst(entity, idType, field -> Stream.of(field.getAnnotations())
+                .anyMatch(annotation -> annotation.annotationType().getSimpleName().equalsIgnoreCase("id")));
+    }
+
 }

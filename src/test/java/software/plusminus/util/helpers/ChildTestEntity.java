@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util.helpers;
 
-import lombok.experimental.UtilityClass;
+public class ChildTestEntity extends TestEntity {
 
-import java.util.function.BinaryOperator;
-
-@UtilityClass
-public class StreamUtils {
-
-    public <T> BinaryOperator<T> noDuplicatesMergeFunction() {
-        return (u, v) -> {
-            throw new IllegalStateException(String.format("Duplicate key %s", u));
-        };
-    }
-
-    public <T> BinaryOperator<T> ignoreOthersMergeFunction() {
-        return (u, v) -> u;
+    public ChildTestEntity(Long id, String myField) {
+        super(id, myField);
     }
 }

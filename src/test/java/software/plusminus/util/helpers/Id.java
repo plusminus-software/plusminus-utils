@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util.helpers;
 
-import lombok.experimental.UtilityClass;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-import java.lang.reflect.ParameterizedType;
-
-@UtilityClass
-public class GenericsUtils {
-
-    public <T> Class<T> getFirstGenericType(Object object) {
-        return (Class<T>)
-                ((ParameterizedType) object.getClass().getGenericSuperclass())
-                        .getActualTypeArguments()[0];
-    }
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Id {
 }

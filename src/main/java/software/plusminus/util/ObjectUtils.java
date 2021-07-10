@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package company.plusminus.util;
+package software.plusminus.util;
 
-import company.plusminus.util.exception.UnknownMethodException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.BeanMap;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import software.plusminus.util.exception.UnknownMethodException;
 
 import java.beans.FeatureDescriptor;
 import java.lang.reflect.Method;
