@@ -28,7 +28,7 @@ public class StreamUtils {
         };
     }
 
-    public <T> BinaryOperator<T> ignoreOthersMergeFunction() {
+    public <T> BinaryOperator<T> ignoreDuplicatesMergeFunction() {
         return (u, v) -> u;
     }
 }
