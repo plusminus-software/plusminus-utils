@@ -57,10 +57,6 @@ public class ObjectUtils {
         return references;
     }
 
-    public boolean isJvmClass(Class<?> type) {
-        return type.getPackage().getName().startsWith("java.");
-    }
-
     public boolean equalsMethodIsOverridden(Object object) {
         Method equals;
         try {
@@ -72,7 +68,7 @@ public class ObjectUtils {
     }
 
     private void populateReferences(Object object, Set<Object> references) {
-        boolean isJvmClass = isJvmClass(object.getClass());
+        boolean isJvmClass = ClassUtils.isJvmClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
         if (isJvmClass && !isCollection && !isMap) {
@@ -98,7 +94,7 @@ public class ObjectUtils {
     }
 
     private boolean distinctReferencesOnly(Object object, Set<Object> references) {
-        boolean isJvmClass = isJvmClass(object.getClass());
+        boolean isJvmClass = ClassUtils.isJvmClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
         if (isJvmClass && !isCollection && !isMap) {

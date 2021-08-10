@@ -42,6 +42,9 @@ import java.util.stream.Collectors;
 
 @UtilityClass
 public class ClassUtils {
+    
+    private static final List<Class> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
+            short.class, int.class, long.class, float.class, double.class);
 
     @Nullable
     public <T> Class<T> findClass(String basePackageName, String className) {
@@ -102,6 +105,11 @@ public class ClassUtils {
                 | InvocationTargetException | NoSuchMethodException e) {
             throw new ConstructionException(e);
         }
+    }
+
+    public boolean isJvmClass(Class<?> type) {
+        return PRIMITIVE_CLASSES.contains(type) 
+                || type.getPackage().getName().startsWith("java.");
     }
 
     private List<Class<?>> findClassesInternal(String packageSearchPath, Predicate<Class> predicate) {
