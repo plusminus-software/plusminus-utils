@@ -23,6 +23,7 @@ import software.plusminus.util.exception.UnknownMethodException;
 
 import java.beans.FeatureDescriptor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -100,6 +101,10 @@ public class ObjectUtils {
         if (isJvmClass && !isCollection && !isMap) {
             return true;
         }
+        boolean isEnum = Enum.class.isAssignableFrom(object.getClass());
+        if (isEnum) {
+            return true;
+        }
         
         boolean added = references.add(object);
         if (!added) {
@@ -115,6 +120,7 @@ public class ObjectUtils {
                     .allMatch(k -> ObjectUtils.distinctReferencesOnly(k, references));
         }
         return FieldUtils.getFieldsStream(object.getClass())
+                .filter(field -> !Modifier.isStatic(field.getModifiers()))
                 .map(field -> FieldUtils.read(object, field))
                 .filter(Objects::nonNull)
                 .allMatch(value -> ObjectUtils.distinctReferencesOnly(value, references));

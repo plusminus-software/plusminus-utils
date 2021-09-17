@@ -15,60 +15,56 @@
  */
 package software.plusminus.util;
 
+import com.google.common.reflect.ClassPath;
 import lombok.experimental.UtilityClass;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.core.type.ClassMetadata;
-import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.lang.Nullable;
-import org.springframework.util.SystemPropertyUtils;
 import software.plusminus.util.exception.ConstructionException;
 import software.plusminus.util.exception.LoadException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @UtilityClass
 public class ClassUtils {
-    
+
     private static final List<Class> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
             short.class, int.class, long.class, float.class, double.class);
 
+    private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME = new HashMap<>();
+    private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE = new HashMap<>();
+
     @Nullable
-    public <T> Class<T> findClass(String basePackageName, String className) {
-        List<Class<?>> classes = findInPackage(basePackageName, c -> c.getSimpleName().equals(className));
+    public Class<?> findClassBySimpleName(String simpleClassName) {
+        List<Class<?>> classes = CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
+                ClassHolder.CLASSES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
+                        .map(ClassPath.ClassInfo::load)
+                        .collect(Collectors.toList()));
         if (classes.isEmpty()) {
             return null;
         }
         if (classes.size() > 1) {
-            throw new LoadException("More than one classes are found with name " + className);
+            throw new LoadException("More than one classes are found with name " + simpleClassName);
         }
-        return (Class<T>) classes.get(0);
+        return classes.get(0);
     }
 
-    public List<Class<?>> findAllInPackage(String basePackage) {
-        return findInPackage(basePackage, c -> true);
-    }
-    
-    public List<Class<?>> findInPackage(String basePackage, Predicate<Class> predicate) {
-        String resolvedBasePackage =
-                org.springframework.util.ClassUtils.convertClassNameToResourcePath(
-                        SystemPropertyUtils.resolvePlaceholders(basePackage));
-        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
-                + resolvedBasePackage + "/**/*.class";
-        return findClassesInternal(packageSearchPath, predicate);
+    public List<Class<?>> findAllInPackage(String packageName) {
+        return CLASSES_BY_PACKAGE.computeIfAbsent(packageName, key ->
+                ClassHolder.CLASSES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
+                        .map(ClassPath.ClassInfo::load)
+                        .collect(Collectors.toList()));
     }
 
     public Map<String, Class<?>> toMap(Collection<Class<?>> classes) {
@@ -108,42 +104,27 @@ public class ClassUtils {
     }
 
     public boolean isJvmClass(Class<?> type) {
-        return PRIMITIVE_CLASSES.contains(type) 
+        return PRIMITIVE_CLASSES.contains(type)
                 || type.getPackage().getName().startsWith("java.");
     }
 
-    private List<Class<?>> findClassesInternal(String packageSearchPath, Predicate<Class> predicate) {
-        ResourcePatternResolver resourcePatternResolver =
-                new PathMatchingResourcePatternResolver();
-        MetadataReaderFactory metadataReaderFactory =
-                new CachingMetadataReaderFactory(resourcePatternResolver);
+    private static class ClassHolder {
 
-        Resource[] resources;
-        try {
-            resources = resourcePatternResolver.getResources(packageSearchPath);
-        } catch (IOException e) {
-            throw new LoadException(e);
+        static final Set<ClassPath.ClassInfo> ALL_CLASSES;
+        static final Map<String, List<ClassPath.ClassInfo>> CLASSES_BY_SIMPLE_NAME;
+        static final Map<String, List<ClassPath.ClassInfo>> CLASSES_BY_PACKAGE;
+
+        static {
+            try {
+                ALL_CLASSES = ClassPath.from(ClassLoader.getSystemClassLoader())
+                        .getAllClasses();
+                CLASSES_BY_SIMPLE_NAME = ALL_CLASSES.stream()
+                        .collect(Collectors.groupingBy(ClassPath.ClassInfo::getSimpleName));
+                CLASSES_BY_PACKAGE = ALL_CLASSES.stream()
+                        .collect(Collectors.groupingBy(ClassPath.ClassInfo::getPackageName));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
-
-        return Arrays.stream(resources)
-                .filter(Resource::isReadable)
-                .map(resource -> {
-                    try {
-                        return metadataReaderFactory.getMetadataReader(resource);
-                    } catch (IOException e) {
-                        throw new LoadException(e);
-                    }
-                })
-                .map(MetadataReader::getClassMetadata)
-                .map(ClassMetadata::getClassName)
-                .map(className -> {
-                    try {
-                        return Class.forName(className);
-                    } catch (ClassNotFoundException e) {
-                        throw new LoadException(e);
-                    }
-                })
-                .filter(predicate)
-                .collect(Collectors.toList());
     }
 }
