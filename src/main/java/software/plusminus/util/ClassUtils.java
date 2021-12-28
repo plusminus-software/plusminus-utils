@@ -60,11 +60,21 @@ public class ClassUtils {
         return classes.get(0);
     }
 
-    public List<Class<?>> findAllInPackage(String packageName) {
+    public List<Class<?>> findClassesInPackage(String packageName) {
         return CLASSES_BY_PACKAGE.computeIfAbsent(packageName, key ->
                 ClassHolder.CLASSES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassPath.ClassInfo::load)
                         .collect(Collectors.toList()));
+    }
+
+    public List<Class<?>> findClassesInPackageByRegex(String packageNameRegex) {
+        List<String> packages = ClassHolder.CLASSES_BY_PACKAGE.keySet().stream()
+                .filter(p -> p.matches(packageNameRegex))
+                .collect(Collectors.toList());
+        return packages.stream()
+                .map(ClassUtils::findClassesInPackage)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     public Map<String, Class<?>> toMap(Collection<Class<?>> classes) {
