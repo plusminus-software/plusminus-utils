@@ -47,10 +47,7 @@ public class ClassUtils {
 
     @Nullable
     public Class<?> findClassBySimpleName(String simpleClassName) {
-        List<Class<?>> classes = CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
-                ClassHolder.CLASSES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
-                        .map(ClassPath.ClassInfo::load)
-                        .collect(Collectors.toList()));
+        List<Class<?>> classes = findAllClassesBySimpleName(simpleClassName);
         if (classes.isEmpty()) {
             return null;
         }
@@ -58,6 +55,13 @@ public class ClassUtils {
             throw new LoadException("More than one classes are found with name " + simpleClassName);
         }
         return classes.get(0);
+    }
+    
+    public List<Class<?>> findAllClassesBySimpleName(String simpleClassName) {
+        return CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
+                ClassHolder.CLASSES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
+                        .map(ClassPath.ClassInfo::load)
+                        .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackage(String packageName) {
