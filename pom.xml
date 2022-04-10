@@ -60,6 +60,11 @@
             <artifactId>guava</artifactId>
             <version>23.0</version>
         </dependency>
+        <dependency>
+            <groupId>software.plusminus</groupId>
+            <artifactId>plusminus-check</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- TEST -->
         <dependency>
             <groupId>org.assertj</groupId>
