@@ -116,6 +116,7 @@ public class FieldUtils {
                     }
                     return Stream.of(value);
                 })
+                .filter(Objects::nonNull)
                 .filter(values::add)
                 .forEach(value -> addFieldValuesDeep(values, value, fieldPredicate));
     }
