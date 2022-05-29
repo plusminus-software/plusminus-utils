@@ -69,7 +69,7 @@ public class ObjectUtils {
     }
 
     private void populateReferences(Object object, Set<Object> references) {
-        boolean isJvmClass = ClassUtils.isJvmClass(object.getClass());
+        boolean isJvmClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
         if (isJvmClass && !isCollection && !isMap) {
@@ -95,10 +95,10 @@ public class ObjectUtils {
     }
 
     private boolean distinctReferencesOnly(Object object, Set<Object> references) {
-        boolean isJvmClass = ClassUtils.isJvmClass(object.getClass());
+        boolean isJavaClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
-        if (isJvmClass && !isCollection && !isMap) {
+        if (isJavaClass && !isCollection && !isMap) {
             return true;
         }
         boolean isEnum = Enum.class.isAssignableFrom(object.getClass());

@@ -122,7 +122,7 @@ public class ClassUtils {
         }
     }
 
-    public boolean isJvmClass(Class<?> type) {
+    public boolean isJavaClass(Class<?> type) {
         return PRIMITIVE_CLASSES.contains(type)
                 || type.isArray()
                 || type.getPackage().getName().startsWith("java.");
