@@ -19,6 +19,7 @@ import lombok.experimental.UtilityClass;
 import org.springframework.lang.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -33,11 +34,24 @@ public class AnnotationUtils {
                 .map(Annotation::annotationType)
                 .collect(Collectors.toSet());
         Stream<Annotation> filteredSecondary = secondary.stream()
-                .filter(a -> !primaryTypes.contains(a.annotationType())); 
+                .filter(a -> !primaryTypes.contains(a.annotationType()));
         return Stream.concat(primary.stream(), filteredSecondary)
                 .collect(Collectors.toList());
     }
-    
+
+    public List<Annotation> findMergedAnnotationsOnMethodAndClass(Method method,
+                                                                  Predicate<Annotation> filter) {
+        List<Annotation> methodAnnotations = Stream.of(
+                org.springframework.core.annotation.AnnotationUtils.getAnnotations(method))
+                .filter(filter)
+                .collect(Collectors.toList());
+        List<Annotation> classAnnotations = Stream.of(
+                org.springframework.core.annotation.AnnotationUtils.getAnnotations(method.getDeclaringClass()))
+                .filter(filter)
+                .collect(Collectors.toList());
+        return mergeAnnotations(methodAnnotations, classAnnotations);
+    }
+
     @Nullable
     public <T> T findAttribute(Annotation annotation, Class<T> attributeType) {
         return findAttribute(annotation, attributeType, a -> true);
