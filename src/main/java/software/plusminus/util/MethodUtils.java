@@ -16,10 +16,13 @@
 package software.plusminus.util;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.lang.Nullable;
 import software.plusminus.util.exception.UnknownMethodException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 @UtilityClass
@@ -38,6 +41,12 @@ public class MethodUtils {
 
         return fields;
     }
+    
+    public Stream<Method> getMethodsHierarchy(Method method) {
+        return ClassUtils.getHierarchyWithInterfaces(method.getDeclaringClass()).stream()
+                .map(c -> findMethod(c.getMethods(), method))
+                .filter(Objects::nonNull);
+    }
 
     public <T> boolean checkMethodHasAnnotation(T object,
                                                Class<? extends Annotation> annotationType,
@@ -50,6 +59,15 @@ public class MethodUtils {
         } catch (NoSuchMethodException e) {
             throw new UnknownMethodException(e);
         }
+    }
+    
+    @Nullable
+    private Method findMethod(Method[] methods, Method example) {
+        return Stream.of(methods)
+                .filter(m -> m.getName().equals(example.getName()))
+                .filter(m -> Arrays.equals(m.getParameterTypes(), example.getParameterTypes()))
+                .findFirst()
+                .orElse(null);
     }
 
 }

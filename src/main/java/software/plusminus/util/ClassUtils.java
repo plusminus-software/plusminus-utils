@@ -35,11 +35,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @UtilityClass
 public class ClassUtils {
@@ -136,7 +138,7 @@ public class ClassUtils {
         }
     }
 
-    public static String getPackageName(String className) {
+    public String getPackageName(String className) {
         int index = className.lastIndexOf('.');
         if (index == -1) {
             return "";
@@ -144,12 +146,31 @@ public class ClassUtils {
         return className.substring(0, index);
     }
 
-    public static String getSimpleClassName(String className) {
+    public String getSimpleClassName(String className) {
         int index = className.lastIndexOf('.');
         if (index == -1) {
             return className;
         }
         return className.substring(index + 1);
+    }
+    
+    public Set<Class<?>> getHierarchyWithInterfaces(Class<?> clazz) {
+        Set<Class<?>> classes = new LinkedHashSet<>();
+        Class<?> currentClass = clazz;
+        while (currentClass != null) {
+            addInterfaces(classes, clazz);
+            currentClass = currentClass.getSuperclass();
+        }
+        return classes;
+    }
+    
+    private void addInterfaces(Set<Class<?>> interfaces, Class<?> clazz) {
+        if (interfaces.contains(clazz)) {
+            return;
+        }
+        interfaces.add(clazz);
+        Stream.of(clazz.getInterfaces())
+                .forEach(i -> addInterfaces(interfaces, i));
     }
 
     private static class ClassHolder {

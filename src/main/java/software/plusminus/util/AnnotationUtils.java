@@ -19,8 +19,10 @@ import lombok.experimental.UtilityClass;
 import org.springframework.lang.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,6 +30,80 @@ import java.util.stream.Stream;
 
 @UtilityClass
 public class AnnotationUtils {
+
+    @Nullable
+    public <T extends Annotation> T findAnnotation(Class<T> annotationType, Object object) {
+        object = ObjectUtils.unproxy(object);
+        return findAnnotation(annotationType, object.getClass());
+    }
+
+    @Nullable
+    public <T extends Annotation> T findAnnotation(Class<T> annotationType, Class<?> target) {
+        return ClassUtils.getHierarchyWithInterfaces(target).stream()
+                .map(c -> c.getAnnotation(annotationType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+    
+    @Nullable
+    public <T extends Annotation> T findAnnotation(Class<T> annotationType, Field field) {
+        T annotation = field.getAnnotation(annotationType);
+        if (annotation == null) {
+            return findAnnotation(annotationType, field.getDeclaringClass());
+        }
+        return annotation;
+    }
+    
+    @Nullable
+    public <T extends Annotation> T findAnnotation(Class<T> annotationType, Method method) {
+        T annotation = MethodUtils.getMethodsHierarchy(method)
+                .map(m -> method.getAnnotation(annotationType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (annotation != null) {
+            return annotation;
+        }
+        return findAnnotation(annotationType, method.getDeclaringClass());
+    }
+    
+    @Nullable
+    public Annotation findAnnotation(String annotationType, Object object) {
+        object = ObjectUtils.unproxy(object);
+        return findAnnotation(annotationType, object.getClass());
+    }
+
+    @Nullable
+    public Annotation findAnnotation(String annotationType, Class<?> target) {
+        return ClassUtils.getHierarchyWithInterfaces(target).stream()
+                .map(c -> findFirstAnnotation(c.getAnnotations(), annotationType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+    
+    @Nullable
+    public Annotation findAnnotation(String annotationType, Field field) {
+        Annotation annotation = findFirstAnnotation(field.getAnnotations(), annotationType);
+        if (annotation == null) {
+            return findAnnotation(annotationType, field.getDeclaringClass());
+        }
+        return annotation;
+    }
+    
+    @Nullable
+    public Annotation findAnnotation(String annotationType, Method method) {
+        Annotation annotation = MethodUtils.getMethodsHierarchy(method)
+                .map(m -> findFirstAnnotation(m.getAnnotations(), annotationType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (annotation != null) {
+            return annotation;
+        }
+        return findAnnotation(annotationType, method.getDeclaringClass());
+    }
 
     public List<Annotation> mergeAnnotations(List<Annotation> primary, List<Annotation> secondary) {
         Set<Class<? extends Annotation>> primaryTypes = primary.stream()
@@ -81,6 +157,24 @@ public class AnnotationUtils {
     public boolean isArrayContainIgnoreCase(Annotation[] annotations, String annotationType) {
         return Stream.of(annotations)
                 .anyMatch(annotation -> annotation.annotationType().getSimpleName().equalsIgnoreCase(annotationType));
+    }
+    
+    @Nullable
+    private Annotation findFirstAnnotation(Annotation[] annotations, String annotationType) {
+        return Stream.of(annotations)
+                .filter(a -> filterAnnotation(a, annotationType))
+                .findFirst()
+                .orElse(null);
+    }
+    
+    private boolean filterAnnotation(Annotation annotation, String annotationType) {
+        String annotationName;
+        if (annotationType.contains(".")) {
+            annotationName = annotation.annotationType().getName();
+        } else {
+            annotationName = annotation.annotationType().getSimpleName();
+        }
+        return annotationType.equals(annotationName); 
     }
 
 }

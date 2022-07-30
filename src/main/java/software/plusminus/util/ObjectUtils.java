@@ -68,6 +68,11 @@ public class ObjectUtils {
         return object.getClass() != equals.getDeclaringClass();
     }
 
+    public <T> T unproxy(T object) {
+        //TODO implement
+        return object;
+    }
+
     private void populateReferences(Object object, Set<Object> references) {
         boolean isJvmClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
