@@ -48,9 +48,18 @@ public class ClassUtils {
 
     private static final List<Class> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
             short.class, int.class, long.class, float.class, double.class);
-
+    private static final Map<String, List<String>> CLASS_NAMES_BY_SIMPLE_NAME;
+    private static final Map<String, List<String>> CLASS_NAMES_BY_PACKAGE;
     private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME = new HashMap<>();
     private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE = new HashMap<>();
+    
+    static {
+        Set<String> allClassNames = getAllClasses();
+        CLASS_NAMES_BY_SIMPLE_NAME = allClassNames.stream()
+                .collect(Collectors.groupingBy(ClassUtils::getSimpleClassName));
+        CLASS_NAMES_BY_PACKAGE = allClassNames.stream()
+                .collect(Collectors.groupingBy(ClassUtils::getPackageName));
+    }
 
     @Nullable
     public Class<?> findClassBySimpleName(String simpleClassName) {
@@ -66,20 +75,20 @@ public class ClassUtils {
     
     public List<Class<?>> findAllClassesBySimpleName(String simpleClassName) {
         return CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
-                ClassHolder.CLASSES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
+                CLASS_NAMES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackage(String packageName) {
         return CLASSES_BY_PACKAGE.computeIfAbsent(packageName, key ->
-                ClassHolder.CLASSES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
+                CLASS_NAMES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackageByRegex(String packageNameRegex) {
-        List<String> packages = ClassHolder.CLASSES_BY_PACKAGE.keySet().stream()
+        List<String> packages = CLASS_NAMES_BY_PACKAGE.keySet().stream()
                 .filter(p -> p.matches(packageNameRegex))
                 .collect(Collectors.toList());
         return packages.stream()
@@ -147,10 +156,12 @@ public class ClassUtils {
     }
 
     public String getSimpleClassName(String className) {
-        int index = className.lastIndexOf('.');
-        if (index == -1) {
+        int dotIndex = className.lastIndexOf('.');
+        int dollarIndex = className.lastIndexOf('$');
+        if (dotIndex == -1 && dollarIndex == -1) {
             return className;
         }
+        int index = dotIndex > dollarIndex ? dotIndex : dollarIndex;
         return className.substring(index + 1);
     }
     
@@ -173,46 +184,31 @@ public class ClassUtils {
                 .forEach(i -> addInterfaces(interfaces, i));
     }
 
-    private static class ClassHolder {
+    private Set<String> getAllClasses() {
+        ResourcePatternResolver resourcePatternResolver =
+                new PathMatchingResourcePatternResolver();
+        MetadataReaderFactory metadataReaderFactory =
+                new CachingMetadataReaderFactory(resourcePatternResolver);
 
-        static final Set<String> ALL_CLASSES;
-        static final Map<String, List<String>> CLASSES_BY_SIMPLE_NAME;
-        static final Map<String, List<String>> CLASSES_BY_PACKAGE;
-
-        static {
-            ALL_CLASSES = getAllClasses();
-            CLASSES_BY_SIMPLE_NAME = ALL_CLASSES.stream()
-                    .collect(Collectors.groupingBy(ClassUtils::getSimpleClassName));
-            CLASSES_BY_PACKAGE = ALL_CLASSES.stream()
-                    .collect(Collectors.groupingBy(ClassUtils::getPackageName));
+        Resource[] resources;
+        try {
+            resources = resourcePatternResolver.getResources("classpath*:**");
+        } catch (IOException e) {
+            throw new LoadException(e);
         }
-        
-        private static Set<String> getAllClasses() {
-            ResourcePatternResolver resourcePatternResolver =
-                    new PathMatchingResourcePatternResolver();
-            MetadataReaderFactory metadataReaderFactory =
-                    new CachingMetadataReaderFactory(resourcePatternResolver);
 
-            Resource[] resources;
-            try {
-                resources = resourcePatternResolver.getResources("classpath*:**");
-            } catch (IOException e) {
-                throw new LoadException(e);
-            }
-
-            return Arrays.stream(resources)
-                    .filter(Resource::isReadable)
-                    .filter(r -> r.toString().contains(".class"))
-                    .map(resource -> {
-                        try {
-                            return metadataReaderFactory.getMetadataReader(resource);
-                        } catch (IOException e) {
-                            throw new LoadException(e);
-                        }
-                    })
-                    .map(MetadataReader::getClassMetadata)
-                    .map(ClassMetadata::getClassName)
-                    .collect(Collectors.toSet());
-        }
+        return Arrays.stream(resources)
+                .filter(Resource::isReadable)
+                .filter(r -> r.toString().contains(".class"))
+                .map(resource -> {
+                    try {
+                        return metadataReaderFactory.getMetadataReader(resource);
+                    } catch (IOException e) {
+                        throw new LoadException(e);
+                    }
+                })
+                .map(MetadataReader::getClassMetadata)
+                .map(ClassMetadata::getClassName)
+                .collect(Collectors.toSet());
     }
 }
