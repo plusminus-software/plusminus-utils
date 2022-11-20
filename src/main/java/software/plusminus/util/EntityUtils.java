@@ -18,6 +18,8 @@ package software.plusminus.util;
 import lombok.experimental.UtilityClass;
 import org.springframework.lang.Nullable;
 
+import java.lang.reflect.Field;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @UtilityClass
@@ -30,7 +32,15 @@ public class EntityUtils {
 
     @Nullable
     public <T, I> I findId(T entity, Class<I> idType) {
-        return FieldUtils.readFirst(entity, idType, field -> Stream.of(field.getAnnotations())
+        Optional<Field> idField = findIdField(entity.getClass());
+        if (!idField.isPresent()) {
+            return null;
+        }
+        return FieldUtils.read(entity, idType, idField.get());
+    }
+    
+    public Optional<Field> findIdField(Class<?> type) {
+        return FieldUtils.findFirst(type, field -> Stream.of(field.getAnnotations())
                 .anyMatch(annotation -> annotation.annotationType().getSimpleName().equalsIgnoreCase("id")));
     }
 
