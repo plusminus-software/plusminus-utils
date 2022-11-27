@@ -93,8 +93,7 @@ public class ObjectUtils {
             map.keySet().forEach(k -> ObjectUtils.populateReferences(k, references));
             map.values().forEach(v -> ObjectUtils.populateReferences(v, references));
         } else {
-            FieldUtils.getFieldsStream(object.getClass())
-                    .map(field -> FieldUtils.read(object, field))
+            fieldValuesStream(object)
                     .forEach(value -> ObjectUtils.populateReferences(value, references));
         }
     }
@@ -124,13 +123,17 @@ public class ObjectUtils {
             return Stream.concat(map.keySet().stream(), map.values().stream())
                     .allMatch(k -> ObjectUtils.distinctReferencesOnly(k, references));
         }
-        return FieldUtils.getFieldsStream(object.getClass())
-                .filter(field -> !Modifier.isStatic(field.getModifiers()))
-                .map(field -> FieldUtils.read(object, field))
-                .filter(Objects::nonNull)
+        return fieldValuesStream(object)
                 .allMatch(value -> ObjectUtils.distinctReferencesOnly(value, references));
     }
     
+    private Stream<Object> fieldValuesStream(Object object) {
+        return FieldUtils.getFieldsStream(object.getClass())
+                .filter(field -> !Modifier.isStatic(field.getModifiers()))
+                .map(field -> FieldUtils.read(object, field))
+                .filter(Objects::nonNull);
+    }
+
     private Set<Object> identitySet() {
         return Collections.newSetFromMap(new IdentityHashMap<>());
     }
