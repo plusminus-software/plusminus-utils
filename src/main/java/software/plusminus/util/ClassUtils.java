@@ -20,7 +20,6 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
@@ -46,19 +45,22 @@ import java.util.stream.Stream;
 @UtilityClass
 public class ClassUtils {
 
-    private static final List<Class> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
+    private static final List<Class<?>> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
             short.class, int.class, long.class, float.class, double.class);
-    private static final Map<String, List<String>> CLASS_NAMES_BY_SIMPLE_NAME;
-    private static final Map<String, List<String>> CLASS_NAMES_BY_PACKAGE;
+    private static final Map<String, List<Resource>> CLASS_NAMES_BY_SIMPLE_NAME;
+    private static final Map<String, List<Resource>> CLASS_NAMES_BY_PACKAGE;
     private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME = new HashMap<>();
     private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE = new HashMap<>();
-    
+    private static final ResourcePatternResolver RESOURCE_PATTERN_RESOLVER = new PathMatchingResourcePatternResolver();
+    private static final MetadataReaderFactory METADATA_READER_FACTORY =
+            new CachingMetadataReaderFactory(RESOURCE_PATTERN_RESOLVER);
+
     static {
-        Set<String> allClassNames = getAllClasses();
-        CLASS_NAMES_BY_SIMPLE_NAME = allClassNames.stream()
-                .collect(Collectors.groupingBy(ClassUtils::getSimpleClassName));
-        CLASS_NAMES_BY_PACKAGE = allClassNames.stream()
-                .collect(Collectors.groupingBy(ClassUtils::getPackageName));
+        List<Resource> allClassses = getAllClasses();
+        CLASS_NAMES_BY_SIMPLE_NAME = allClassses.stream()
+                .collect(Collectors.groupingBy(ClassUtils::getSimpleClassNameFromResource));
+        CLASS_NAMES_BY_PACKAGE = allClassses.stream()
+                .collect(Collectors.groupingBy(ClassUtils::getPackageNameFromResource));
     }
 
     @Nullable
@@ -72,7 +74,7 @@ public class ClassUtils {
         }
         return classes.get(0);
     }
-    
+
     public List<Class<?>> findAllClassesBySimpleName(String simpleClassName) {
         return CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
                 CLASS_NAMES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
@@ -128,7 +130,7 @@ public class ClassUtils {
         try {
             return type.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException
-                | InvocationTargetException | NoSuchMethodException e) {
+                 | InvocationTargetException | NoSuchMethodException e) {
             throw new ConstructionException(e);
         }
     }
@@ -138,11 +140,21 @@ public class ClassUtils {
                 || type.isArray()
                 || type.getPackage().getName().startsWith("java.");
     }
-    
+
     public Class<?> loadClass(String className) {
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException e) {
+            throw new LoadException(e);
+        }
+    }
+
+    public Class<?> loadClass(Resource resource) {
+        try {
+            MetadataReader metadataReader = METADATA_READER_FACTORY.getMetadataReader(resource);
+            String className = metadataReader.getClassMetadata().getClassName();
+            return loadClass(className);
+        } catch (IOException e) {
             throw new LoadException(e);
         }
     }
@@ -164,7 +176,7 @@ public class ClassUtils {
         int index = dotIndex > dollarIndex ? dotIndex : dollarIndex;
         return className.substring(index + 1);
     }
-    
+
     public Set<Class<?>> getHierarchyWithInterfaces(Class<?> clazz) {
         Set<Class<?>> classes = new LinkedHashSet<>();
         Class<?> currentClass = clazz;
@@ -174,7 +186,19 @@ public class ClassUtils {
         }
         return classes;
     }
-    
+
+    private String getSimpleClassNameFromResource(Resource resource) {
+        return substringResource(resource.toString(),
+                Arrays.asList("\\", "/"),
+                Collections.singletonList("."));
+    }
+
+    private String getPackageNameFromResource(Resource resource) {
+        return substringResource(resource.toString(),
+                Arrays.asList("!/", "!\\", "classes\\", "classes/"),
+                Arrays.asList("/", "\\"));
+    }
+
     private void addInterfaces(Set<Class<?>> interfaces, Class<?> clazz) {
         if (interfaces.contains(clazz)) {
             return;
@@ -184,31 +208,57 @@ public class ClassUtils {
                 .forEach(i -> addInterfaces(interfaces, i));
     }
 
-    private Set<String> getAllClasses() {
-        ResourcePatternResolver resourcePatternResolver =
-                new PathMatchingResourcePatternResolver();
-        MetadataReaderFactory metadataReaderFactory =
-                new CachingMetadataReaderFactory(resourcePatternResolver);
-
+    private List<Resource> getAllClasses() {
         Resource[] resources;
         try {
-            resources = resourcePatternResolver.getResources("classpath*:**");
+            resources = RESOURCE_PATTERN_RESOLVER.getResources("classpath*:**");
         } catch (IOException e) {
             throw new LoadException(e);
         }
-
         return Arrays.stream(resources)
                 .filter(Resource::isReadable)
-                .filter(r -> r.toString().contains(".class"))
-                .map(resource -> {
-                    try {
-                        return metadataReaderFactory.getMetadataReader(resource);
-                    } catch (IOException e) {
-                        throw new LoadException(e);
-                    }
+                .filter(resource -> {
+                    String resourceName = resource.toString();
+                    return resourceName.endsWith(".class]")
+                            && !resourceName.endsWith("module-info.class]");
                 })
-                .map(MetadataReader::getClassMetadata)
-                .map(ClassMetadata::getClassName)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
+    }
+
+    private String substringResource(String resourceName,
+                                     List<String> startSubstrings,
+                                     List<String> endSubstrings) {
+        int start = findMaxLastIndex(resourceName,
+                true,
+                0,
+                startSubstrings);
+        int end = findMaxLastIndex(resourceName,
+                false,
+                resourceName.length(),
+                endSubstrings);
+        if (end < start) {
+            throw new LoadException("Can't load " + resourceName);
+        }
+        return resourceName.substring(start, end);
+    }
+
+    private int findMaxLastIndex(String text,
+                                 boolean addSubstringLengthToIndex,
+                                 int defaultValue,
+                                 List<String> substrings) {
+        int max = substrings.stream()
+                .mapToInt(s -> {
+                    int index = text.lastIndexOf(s);
+                    if (addSubstringLengthToIndex && index != -1) {
+                        index += s.length();
+                    }
+                    return index;
+                })
+                .max()
+                .orElse(defaultValue);
+        if (max == -1) {
+            max = defaultValue;
+        }
+        return max;
     }
 }
