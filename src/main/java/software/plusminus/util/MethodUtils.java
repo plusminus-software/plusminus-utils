@@ -34,7 +34,7 @@ public class MethodUtils {
     public Stream<Method> getMethodsStream(Class<?> clazz) {
         Stream<Method> fields = Stream.of(clazz.getDeclaredMethods());
 
-        Class superClazz = clazz.getSuperclass();
+        Class<?> superClazz = clazz.getSuperclass();
         if (superClazz != null) {
             fields = Stream.concat(fields, getMethodsStream(superClazz));
         }
@@ -44,7 +44,7 @@ public class MethodUtils {
     
     public Stream<Method> getMethodsHierarchy(Method method) {
         return ClassUtils.getHierarchyWithInterfaces(method.getDeclaringClass()).stream()
-                .map(c -> findMethod(c.getMethods(), method))
+                .map(c -> findMethod(c.getDeclaredMethods(), method))
                 .filter(Objects::nonNull);
     }
 
@@ -54,7 +54,7 @@ public class MethodUtils {
                                                Class<?>... methodParameterTypes) {
 
         try {
-            return object.getClass().getMethod(methodName, methodParameterTypes)
+            return object.getClass().getDeclaredMethod(methodName, methodParameterTypes)
                     .isAnnotationPresent(annotationType);
         } catch (NoSuchMethodException e) {
             throw new UnknownMethodException(e);
