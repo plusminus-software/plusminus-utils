@@ -193,7 +193,7 @@ public class ClassUtils {
                 Collections.singletonList("."));
     }
 
-    private String getPackageNameFromResource(Resource resource) {
+    String getPackageNameFromResource(Resource resource) {
         return substringResource(resource.toString(),
                 Arrays.asList("!/", "!\\", "classes\\", "classes/"),
                 Arrays.asList("/", "\\"));
@@ -236,6 +236,9 @@ public class ClassUtils {
                 false,
                 resourceName.length(),
                 endSubstrings);
+        if (start == end + 1) {
+            return "";
+        }
         if (end < start) {
             throw new LoadException("Can't load " + resourceName);
         }
