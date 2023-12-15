@@ -60,10 +60,12 @@
             <artifactId>guava</artifactId>
             <version>23.0</version>
         </dependency>
+        <!-- TEST -->
         <dependency>
             <groupId>software.plusminus</groupId>
             <artifactId>plusminus-check</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
         <!-- TEST -->
         <dependency>
@@ -74,6 +76,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

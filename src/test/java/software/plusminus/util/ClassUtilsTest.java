@@ -37,4 +37,26 @@ public class ClassUtilsTest {
         check(packageName).is("");
     }
 
+    @Test
+    public void getSimpleNameOfPublicClass() {
+        Resource resource = mock(Resource.class);
+        when(resource.toString())
+                .thenReturn("URL [jar:file:/jdk8/Log4jHotPatch.jar!/Log4jHotPatch.class]");
+
+        String simpleClassName = ClassUtils.getSimpleClassNameFromResource(resource);
+
+        check(simpleClassName).is("Log4jHotPatch");
+    }
+
+    @Test
+    public void getSimpleNameOfInnerClass() {
+        Resource resource = mock(Resource.class);
+        when(resource.toString())
+                .thenReturn("URL [jar:file:/jdk8/Log4jHotPatch.jar!/Log4jHotPatch$1.class]");
+
+        String simpleClassName = ClassUtils.getSimpleClassNameFromResource(resource);
+
+        check(simpleClassName).is("1");
+    }
+
 }

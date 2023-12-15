@@ -47,20 +47,22 @@ public class ClassUtils {
 
     private static final List<Class<?>> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
             short.class, int.class, long.class, float.class, double.class);
-    private static final Map<String, List<Resource>> CLASS_NAMES_BY_SIMPLE_NAME;
-    private static final Map<String, List<Resource>> CLASS_NAMES_BY_PACKAGE;
-    private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME = new HashMap<>();
-    private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE = new HashMap<>();
+    private static final Map<String, List<Resource>> RESOURCES_BY_SIMPLE_NAME;
+    private static final Map<String, List<Resource>> RESOURCES_BY_PACKAGE;
+    private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME;
+    private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE;
     private static final ResourcePatternResolver RESOURCE_PATTERN_RESOLVER = new PathMatchingResourcePatternResolver();
     private static final MetadataReaderFactory METADATA_READER_FACTORY =
             new CachingMetadataReaderFactory(RESOURCE_PATTERN_RESOLVER);
 
     static {
         List<Resource> allClassses = getAllClasses();
-        CLASS_NAMES_BY_SIMPLE_NAME = allClassses.stream()
+        RESOURCES_BY_SIMPLE_NAME = allClassses.stream()
                 .collect(Collectors.groupingBy(ClassUtils::getSimpleClassNameFromResource));
-        CLASS_NAMES_BY_PACKAGE = allClassses.stream()
+        RESOURCES_BY_PACKAGE = allClassses.stream()
                 .collect(Collectors.groupingBy(ClassUtils::getPackageNameFromResource));
+        CLASSES_BY_SIMPLE_NAME = new HashMap<>();
+        CLASSES_BY_PACKAGE = new HashMap<>();
     }
 
     @Nullable
@@ -77,20 +79,20 @@ public class ClassUtils {
 
     public List<Class<?>> findAllClassesBySimpleName(String simpleClassName) {
         return CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
-                CLASS_NAMES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
+                RESOURCES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackage(String packageName) {
         return CLASSES_BY_PACKAGE.computeIfAbsent(packageName, key ->
-                CLASS_NAMES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
+                RESOURCES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackageByRegex(String packageNameRegex) {
-        List<String> packages = CLASS_NAMES_BY_PACKAGE.keySet().stream()
+        List<String> packages = RESOURCES_BY_PACKAGE.keySet().stream()
                 .filter(p -> p.matches(packageNameRegex))
                 .collect(Collectors.toList());
         return packages.stream()
@@ -187,14 +189,15 @@ public class ClassUtils {
         return classes;
     }
 
-    private String getSimpleClassNameFromResource(Resource resource) {
-        return substringResource(resource.toString(),
+    String getSimpleClassNameFromResource(Resource resource) {
+        String className = substringResource(resource,
                 Arrays.asList("\\", "/"),
                 Collections.singletonList("."));
+        return getSimpleClassName(className);
     }
 
     String getPackageNameFromResource(Resource resource) {
-        return substringResource(resource.toString(),
+        return substringResource(resource,
                 Arrays.asList("!/", "!\\", "classes\\", "classes/"),
                 Arrays.asList("/", "\\"));
     }
@@ -225,9 +228,10 @@ public class ClassUtils {
                 .collect(Collectors.toList());
     }
 
-    private String substringResource(String resourceName,
+    private String substringResource(Resource resource,
                                      List<String> startSubstrings,
                                      List<String> endSubstrings) {
+        String resourceName = resource.toString();
         int start = findMaxLastIndex(resourceName,
                 true,
                 0,
