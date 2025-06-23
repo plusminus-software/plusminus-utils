@@ -28,12 +28,11 @@ import java.nio.file.Path;
 public class FileUtils {
 
     public void write(Path path, String content) {
-        Path parent = path.getParent();
-        if (parent == null) {
-            throw new FileException("Incorrect target path: " + path);
-        }
         try {
-            Files.createDirectories(parent);
+            Path parent = path.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             Files.write(path, content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new FileException(e);
@@ -52,5 +51,4 @@ public class FileUtils {
     public boolean exists(Path path) {
         return path.toFile().exists();
     }
-    
 }

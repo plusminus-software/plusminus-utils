@@ -99,6 +99,9 @@ public class ObjectUtils {
     }
 
     private boolean distinctReferencesOnly(Object object, Set<Object> references) {
+        if (object == null) {
+            return true;
+        }
         boolean isJavaClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());

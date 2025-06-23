@@ -3,16 +3,16 @@ package software.plusminus.util;
 import org.junit.Test;
 import org.springframework.core.io.Resource;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static software.plusminus.check.Checks.check;
 
 public class ClassUtilsTest {
     
     @Test
     public void findClassBySimpleName() {
-        Class stringClass = ClassUtils.findClassBySimpleName("ClassUtilsTest");
-        check(stringClass).is(ClassUtilsTest.class);
+        Class<?> stringClass = ClassUtils.findClassBySimpleName("ClassUtilsTest");
+        assertThat(stringClass).isEqualTo(ClassUtilsTest.class);
     }
 
     @Test
@@ -23,7 +23,7 @@ public class ClassUtilsTest {
 
         String packageName = ClassUtils.getPackageNameFromResource(resource);
 
-        check(packageName).is("com");
+        assertThat(packageName).isEqualTo("com");
     }
 
     @Test
@@ -34,7 +34,7 @@ public class ClassUtilsTest {
 
         String packageName = ClassUtils.getPackageNameFromResource(resource);
 
-        check(packageName).is("");
+        assertThat(packageName).isEmpty();
     }
 
     @Test
@@ -45,7 +45,7 @@ public class ClassUtilsTest {
 
         String simpleClassName = ClassUtils.getSimpleClassNameFromResource(resource);
 
-        check(simpleClassName).is("Log4jHotPatch");
+        assertThat(simpleClassName).isEqualTo("Log4jHotPatch");
     }
 
     @Test
@@ -56,7 +56,7 @@ public class ClassUtilsTest {
 
         String simpleClassName = ClassUtils.getSimpleClassNameFromResource(resource);
 
-        check(simpleClassName).is("1");
+        assertThat(simpleClassName).isEqualTo("1");
     }
 
 }

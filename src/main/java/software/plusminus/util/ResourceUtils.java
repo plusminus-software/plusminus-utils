@@ -29,7 +29,10 @@ import java.util.Scanner;
 public class ResourceUtils {
     
     public boolean isResource(String name) {
-        if (name.length() > 0 && !name.startsWith("/")) {
+        if (name.replace('.', ' ').trim().isEmpty()) {
+            return false;
+        }
+        if (!name.isEmpty() && !name.startsWith("/")) {
             name = '/' + name;
         }
         return ResourceUtils.class.getResource(name) != null;
