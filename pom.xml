@@ -40,9 +40,9 @@
     </developers>
 
     <scm>
+        <url>https://github.com/plusminus-software/plusminus-utils</url>
         <connection>scm:git:git://github.com/plusminus-software/plusminus-utils.git</connection>
         <developerConnection>scm:git:ssh://github.com:plusminus-software/plusminus-utils.git</developerConnection>
-        <url>https://github.com/plusminus-software/plusminus-utils/tree/main</url>
         <tag>HEAD</tag>
     </scm>
 
