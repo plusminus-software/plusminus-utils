@@ -18,6 +18,20 @@
     <description>Set of utility classes for all occasions</description>
     <url>https://github.com/plusminus-software/plusminus-utils</url>
 
+    <scm>
+        <url>https://github.com/plusminus-software/plusminus-utils</url>
+        <connection>scm:git:https://github.com/plusminus-software/plusminus-utils.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/plusminus-software/plusminus-utils.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    <issueManagement>
+        <system>Github Issues</system>
+        <url>https://github.com/plusminus-software/plusminus-utils/issues</url>
+    </issueManagement>
+    <ciManagement>
+        <system>Github Actions</system>
+        <url>https://github.com/plusminus-software/plusminus-utils/actions</url>
+    </ciManagement>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -25,7 +39,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-
     <developers>
         <developer>
             <name>Taras Shpek</name>
@@ -37,13 +50,6 @@
             <timezone>Europe/Kyiv</timezone>
         </developer>
     </developers>
-
-    <scm>
-        <url>https://github.com/plusminus-software/plusminus-utils</url>
-        <connection>scm:git:git://github.com/plusminus-software/plusminus-utils.git</connection>
-        <developerConnection>scm:git:ssh://github.com:plusminus-software/plusminus-utils.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
 
     <dependencies>
         <dependency>
@@ -61,7 +67,6 @@
             <version>23.0</version>
         </dependency>
         <!-- TEST -->
-
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -79,19 +84,6 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>sonatype-central-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <build>
         <plugins>
             <!-- TODO unignore jacoco -->
@@ -105,4 +97,16 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>sonatype-central-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>
