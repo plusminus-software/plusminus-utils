@@ -7,7 +7,7 @@
     <parent>
         <groupId>software.plusminus</groupId>
         <artifactId>plusminus-parent</artifactId>
-        <version>1.4-SNAPSHOT</version>
+        <version>1.5</version>
         <relativePath/>
     </parent>
 
@@ -83,30 +83,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <!-- TODO unignore jacoco -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <repositories>
-        <repository>
-            <id>sonatype-central-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
