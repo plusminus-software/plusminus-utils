@@ -33,11 +33,11 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,8 +61,8 @@ public class ClassUtils {
                 .collect(Collectors.groupingBy(ClassUtils::getSimpleClassNameFromResource));
         RESOURCES_BY_PACKAGE = allClassses.stream()
                 .collect(Collectors.groupingBy(ClassUtils::getPackageNameFromResource));
-        CLASSES_BY_SIMPLE_NAME = new HashMap<>();
-        CLASSES_BY_PACKAGE = new HashMap<>();
+        CLASSES_BY_SIMPLE_NAME = new ConcurrentHashMap<>();
+        CLASSES_BY_PACKAGE = new ConcurrentHashMap<>();
     }
 
     @Nullable
@@ -140,7 +140,7 @@ public class ClassUtils {
     public boolean isJavaClass(Class<?> type) {
         return PRIMITIVE_CLASSES.contains(type)
                 || type.isArray()
-                || type.getPackage().getName().startsWith("java.");
+                || type.getPackage() != null && type.getPackage().getName().startsWith("java.");
     }
 
     public Class<?> loadClass(String className) {
@@ -183,7 +183,7 @@ public class ClassUtils {
         Set<Class<?>> classes = new LinkedHashSet<>();
         Class<?> currentClass = clazz;
         while (currentClass != null) {
-            addInterfaces(classes, clazz);
+            addInterfaces(classes, currentClass);
             currentClass = currentClass.getSuperclass();
         }
         return classes;

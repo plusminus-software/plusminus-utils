@@ -44,6 +44,18 @@ public class EntityUtilsTest {
         assertThat(id).isEqualTo(4);
     }
 
+    @Test
+    public void findId_ReturnsNullWhenNoIdField() {
+        Object id = EntityUtils.findId("plain string");
+        assertThat(id).isNull();
+    }
+
+    @Test
+    public void findIdField() {
+        assertThat(EntityUtils.findIdField(TestEntity.class)).isPresent();
+        assertThat(EntityUtils.findIdField(String.class)).isNotPresent();
+    }
+
     private TestEntity createTestEntity() {
         return new TestEntity(2L, "some text");
     }

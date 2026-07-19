@@ -58,7 +58,7 @@ public class AnnotationUtils {
     @Nullable
     public <T extends Annotation> T findAnnotation(Class<T> annotationType, Method method) {
         T annotation = MethodUtils.getMethodsHierarchy(method)
-                .map(m -> method.getAnnotation(annotationType))
+                .map(m -> m.getAnnotation(annotationType))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);

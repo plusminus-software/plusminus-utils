@@ -48,8 +48,7 @@ public class ObjectUtils {
     }
     
     public boolean containsCircularReferences(Object object) {
-        boolean noDuplicates = distinctReferencesOnly(object, identitySet());
-        return !noDuplicates;
+        return containsCircular(object, identitySet());
     }
     
     public Set<Object> findReferences(Object object) {
@@ -65,7 +64,7 @@ public class ObjectUtils {
         } catch (NoSuchMethodException e) {
             throw new UnknownMethodException(e);
         }
-        return object.getClass() != equals.getDeclaringClass();
+        return equals.getDeclaringClass() != Object.class;
     }
 
     public <T> T unproxy(T object) {
@@ -74,6 +73,9 @@ public class ObjectUtils {
     }
 
     private void populateReferences(Object object, Set<Object> references) {
+        if (object == null) {
+            return;
+        }
         boolean isJvmClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
@@ -98,36 +100,43 @@ public class ObjectUtils {
         }
     }
 
-    private boolean distinctReferencesOnly(Object object, Set<Object> references) {
+    /* Detects real cycles by tracking the current traversal path (recursion stack).
+       A shared-but-acyclic reference (diamond) is not reported as circular, because
+       an object is removed from the path once its subtree has been fully traversed. */
+    private boolean containsCircular(Object object, Set<Object> path) {
         if (object == null) {
-            return true;
+            return false;
         }
         boolean isJavaClass = ClassUtils.isJavaClass(object.getClass());
         boolean isCollection = Collection.class.isAssignableFrom(object.getClass());
         boolean isMap = Map.class.isAssignableFrom(object.getClass());
         if (isJavaClass && !isCollection && !isMap) {
-            return true;
+            return false;
         }
         boolean isEnum = Enum.class.isAssignableFrom(object.getClass());
         if (isEnum) {
-            return true;
-        }
-        
-        boolean added = references.add(object);
-        if (!added) {
             return false;
         }
+
+        boolean added = path.add(object);
+        if (!added) {
+            return true;
+        }
+        boolean circular;
         if (isCollection) {
             Collection<?> collection = (Collection<?>) object;
-            return collection.stream()
-                    .allMatch(o -> ObjectUtils.distinctReferencesOnly(o, references));
+            circular = collection.stream()
+                    .anyMatch(o -> ObjectUtils.containsCircular(o, path));
         } else if (isMap) {
             Map<?, ?> map = (Map<?, ?>) object;
-            return Stream.concat(map.keySet().stream(), map.values().stream())
-                    .allMatch(k -> ObjectUtils.distinctReferencesOnly(k, references));
+            circular = Stream.concat(map.keySet().stream(), map.values().stream())
+                    .anyMatch(k -> ObjectUtils.containsCircular(k, path));
+        } else {
+            circular = fieldValuesStream(object)
+                    .anyMatch(value -> ObjectUtils.containsCircular(value, path));
         }
-        return fieldValuesStream(object)
-                .allMatch(value -> ObjectUtils.distinctReferencesOnly(value, references));
+        path.remove(object);
+        return circular;
     }
     
     private Stream<Object> fieldValuesStream(Object object) {

@@ -16,7 +16,10 @@
 package software.plusminus.util;
 
 import lombok.experimental.UtilityClass;
+import software.plusminus.util.exception.FileException;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
@@ -42,8 +45,16 @@ public class ResourceUtils {
         if (!name.startsWith("/")) {
             name = '/' + name;
         }
-        return new Scanner(ResourceUtils.class.getResourceAsStream(name), StandardCharsets.UTF_8.name())
-                .useDelimiter("\\A").next();
+        try (InputStream input = ResourceUtils.class.getResourceAsStream(name)) {
+            if (input == null) {
+                throw new FileException("Resource not found: " + name);
+            }
+            try (Scanner scanner = new Scanner(input, StandardCharsets.UTF_8.name()).useDelimiter("\\A")) {
+                return scanner.hasNext() ? scanner.next() : "";
+            }
+        } catch (IOException e) {
+            throw new FileException(e);
+        }
     }
     
 }
