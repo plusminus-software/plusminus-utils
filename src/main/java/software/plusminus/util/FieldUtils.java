@@ -22,8 +22,10 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -100,25 +102,27 @@ public class FieldUtils {
 
     @SuppressWarnings("squid:S1452")
     public <T> Set<?> getDeepFieldValues(T object, Predicate<Field> fieldPredicate) {
-        Set<?> values = new HashSet<>();
+        Set<Object> values = new HashSet<>();
         addFieldValuesDeep(values, object, fieldPredicate);
         return values;
     }
 
-    private <T> void addFieldValuesDeep(Set values, T object, Predicate<Field> fieldPredicate) {
+    private void addFieldValuesDeep(Set<Object> values, Object object, Predicate<Field> fieldPredicate) {
+        List<Object> newValues = new ArrayList<>();
         getFieldsStream(object.getClass())
                 .filter(fieldPredicate)
                 .map(field -> read(object, Object.class, field))
                 .filter(Objects::nonNull)
-                .flatMap(value -> {
-                    if (value instanceof Collection) {
-                        return ((Collection) value).stream();
-                    }
-                    return Stream.of(value);
-                })
+                .flatMap(value -> value instanceof Collection
+                        ? ((Collection<?>) value).stream()
+                        : Stream.of(value))
                 .filter(Objects::nonNull)
-                .filter(values::add)
-                .forEach(value -> addFieldValuesDeep(values, value, fieldPredicate));
+                .forEach(value -> {
+                    if (values.add(value)) {
+                        newValues.add(value);
+                    }
+                });
+        newValues.forEach(value -> addFieldValuesDeep(values, value, fieldPredicate));
     }
 
     /* Had to suppress PMD.CloseResource due to possible false positive bug 

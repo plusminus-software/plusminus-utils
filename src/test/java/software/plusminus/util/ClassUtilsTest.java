@@ -66,6 +66,16 @@ public class ClassUtilsTest {
     }
 
     @Test
+    public void toMapThrowsClearMessageOnDuplicateSimpleName() {
+        assertThatThrownBy(() -> ClassUtils.toMap(
+                java.util.Arrays.asList(java.util.Date.class, java.sql.Date.class)))
+                .isInstanceOf(software.plusminus.util.exception.LoadException.class)
+                .hasMessageContaining("Date")
+                .hasMessageContaining("java.util.Date")
+                .hasMessageContaining("java.sql.Date");
+    }
+
+    @Test
     public void getGenericTypeFromObject() {
         Class<?> type = ClassUtils.getGenericType(new Hierarchy.StringList());
         assertThat(type).isEqualTo(String.class);

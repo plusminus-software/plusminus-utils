@@ -47,23 +47,11 @@ public class ClassUtils {
 
     private static final List<Class<?>> PRIMITIVE_CLASSES = Arrays.asList(boolean.class, byte.class, char.class,
             short.class, int.class, long.class, float.class, double.class);
-    private static final Map<String, List<Resource>> RESOURCES_BY_SIMPLE_NAME;
-    private static final Map<String, List<Resource>> RESOURCES_BY_PACKAGE;
-    private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME;
-    private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE;
+    private static final Map<String, List<Class<?>>> CLASSES_BY_SIMPLE_NAME = new ConcurrentHashMap<>();
+    private static final Map<String, List<Class<?>>> CLASSES_BY_PACKAGE = new ConcurrentHashMap<>();
     private static final ResourcePatternResolver RESOURCE_PATTERN_RESOLVER = new PathMatchingResourcePatternResolver();
     private static final MetadataReaderFactory METADATA_READER_FACTORY =
             new CachingMetadataReaderFactory(RESOURCE_PATTERN_RESOLVER);
-
-    static {
-        List<Resource> allClassses = getAllClasses();
-        RESOURCES_BY_SIMPLE_NAME = allClassses.stream()
-                .collect(Collectors.groupingBy(ClassUtils::getSimpleClassNameFromResource));
-        RESOURCES_BY_PACKAGE = allClassses.stream()
-                .collect(Collectors.groupingBy(ClassUtils::getPackageNameFromResource));
-        CLASSES_BY_SIMPLE_NAME = new ConcurrentHashMap<>();
-        CLASSES_BY_PACKAGE = new ConcurrentHashMap<>();
-    }
 
     @Nullable
     public Class<?> findClassBySimpleName(String simpleClassName) {
@@ -79,20 +67,20 @@ public class ClassUtils {
 
     public List<Class<?>> findAllClassesBySimpleName(String simpleClassName) {
         return CLASSES_BY_SIMPLE_NAME.computeIfAbsent(simpleClassName, key ->
-                RESOURCES_BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
+                ResourceIndex.BY_SIMPLE_NAME.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackage(String packageName) {
         return CLASSES_BY_PACKAGE.computeIfAbsent(packageName, key ->
-                RESOURCES_BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
+                ResourceIndex.BY_PACKAGE.getOrDefault(key, Collections.emptyList()).stream()
                         .map(ClassUtils::loadClass)
                         .collect(Collectors.toList()));
     }
 
     public List<Class<?>> findClassesInPackageByRegex(String packageNameRegex) {
-        List<String> packages = RESOURCES_BY_PACKAGE.keySet().stream()
+        List<String> packages = ResourceIndex.BY_PACKAGE.keySet().stream()
                 .filter(p -> p.matches(packageNameRegex))
                 .collect(Collectors.toList());
         return packages.stream()
@@ -103,7 +91,11 @@ public class ClassUtils {
 
     public Map<String, Class<?>> toMap(Collection<Class<?>> classes) {
         return classes.stream()
-                .collect(Collectors.toMap(Class::getSimpleName, Function.identity()));
+                .collect(Collectors.toMap(Class::getSimpleName, Function.identity(),
+                    (first, second) -> {
+                        throw new LoadException("Duplicate simple class name '" + first.getSimpleName()
+                                + "' for classes " + first.getName() + " and " + second.getName());
+                    }));
     }
 
     public Class<?> getGenericType(Class<?> type) {
@@ -211,23 +203,6 @@ public class ClassUtils {
                 .forEach(i -> addInterfaces(interfaces, i));
     }
 
-    private List<Resource> getAllClasses() {
-        Resource[] resources;
-        try {
-            resources = RESOURCE_PATTERN_RESOLVER.getResources("classpath*:**");
-        } catch (IOException e) {
-            throw new LoadException(e);
-        }
-        return Arrays.stream(resources)
-                .filter(Resource::isReadable)
-                .filter(resource -> {
-                    String resourceName = resource.toString();
-                    return resourceName.endsWith(".class]")
-                            && !resourceName.endsWith("module-info.class]");
-                })
-                .collect(Collectors.toList());
-    }
-
     private String substringResource(Resource resource,
                                      List<String> startSubstrings,
                                      List<String> endSubstrings) {
@@ -267,5 +242,36 @@ public class ClassUtils {
             max = defaultValue;
         }
         return max;
+    }
+
+    private static final class ResourceIndex {
+
+        private static final Map<String, List<Resource>> BY_SIMPLE_NAME;
+        private static final Map<String, List<Resource>> BY_PACKAGE;
+
+        static {
+            List<Resource> allClasses = getAllClasses();
+            BY_SIMPLE_NAME = allClasses.stream()
+                    .collect(Collectors.groupingBy(ClassUtils::getSimpleClassNameFromResource));
+            BY_PACKAGE = allClasses.stream()
+                    .collect(Collectors.groupingBy(ClassUtils::getPackageNameFromResource));
+        }
+
+        static List<Resource> getAllClasses() {
+            Resource[] resources;
+            try {
+                resources = RESOURCE_PATTERN_RESOLVER.getResources("classpath*:**");
+            } catch (IOException e) {
+                throw new LoadException(e);
+            }
+            return Arrays.stream(resources)
+                    .filter(Resource::isReadable)
+                    .filter(resource -> {
+                        String resourceName = resource.toString();
+                        return resourceName.endsWith(".class]")
+                                && !resourceName.endsWith("module-info.class]");
+                    })
+                    .collect(Collectors.toList());
+        }
     }
 }

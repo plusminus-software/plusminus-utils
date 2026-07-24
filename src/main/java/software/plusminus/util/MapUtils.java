@@ -27,7 +27,11 @@ public class MapUtils {
 
     public <T> Map<Class, T> toClassMap(List<T> list) {
         return list.stream()
-                .collect(Collectors.toMap(Object::getClass, Function.identity()));
+                .collect(Collectors.toMap(Object::getClass, Function.identity(),
+                    (first, second) -> {
+                        throw new IllegalStateException("Duplicate values for class "
+                                + first.getClass().getName() + ": " + first + " and " + second);
+                    }));
     }
     
 }

@@ -19,6 +19,7 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.BeanMap;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.lang.Nullable;
 import software.plusminus.util.exception.UnknownMethodException;
 
 import java.beans.FeatureDescriptor;
@@ -67,9 +68,34 @@ public class ObjectUtils {
         return equals.getDeclaringClass() != Object.class;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T unproxy(T object) {
-        //TODO implement
-        return object;
+        if (object == null) {
+            return null;
+        }
+        Class<?> hibernateProxyClass = tryLoadClass("org.hibernate.proxy.HibernateProxy");
+        Class<?> lazyInitializerClass = tryLoadClass("org.hibernate.proxy.LazyInitializer");
+        if (hibernateProxyClass == null || lazyInitializerClass == null
+                || !hibernateProxyClass.isInstance(object)) {
+            return object;
+        }
+        try {
+            Method getLazyInitializer = hibernateProxyClass.getMethod("getHibernateLazyInitializer");
+            Object lazyInitializer = getLazyInitializer.invoke(object);
+            Method getImplementation = lazyInitializerClass.getMethod("getImplementation");
+            return (T) getImplementation.invoke(lazyInitializer);
+        } catch (ReflectiveOperationException e) {
+            return object;
+        }
+    }
+
+    @Nullable
+    private Class<?> tryLoadClass(String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
 
     private void populateReferences(Object object, Set<Object> references) {
